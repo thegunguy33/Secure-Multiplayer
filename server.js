@@ -4,11 +4,19 @@ const bodyParser = require('body-parser');
 const expect = require('chai');
 const socket = require('socket.io');
 const cors = require('cors');
+const helmet = require('helmet');
+const http = require('http');
 
 const fccTestingRoutes = require('./routes/fcctesting.js');
 const runner = require('./test-runner.js');
+const serverSideGame = require('./routes/serverSideGame.js');
 
 const app = express();
+
+app.use(helmet.xssFilter());
+app.use(helmet.noCache());
+app.use(helmet.noSniff());
+app.use(helmet.hidePoweredBy({ setTo: 'PHP 7.4.3' }))
 
 app.use('/public', express.static(process.cwd() + '/public'));
 app.use('/assets', express.static(process.cwd() + '/assets'));
@@ -35,6 +43,7 @@ app.use(function(req, res, next) {
     .send('Not Found');
 });
 
+
 const portNum = process.env.PORT || 3000;
 
 // Set up server and tests
@@ -52,5 +61,12 @@ const server = app.listen(portNum, () => {
     }, 1500);
   }
 });
+
+
+const io = new socket(server);
+
+// Server logic for game 
+serverSideGame(socket, io);
+
 
 module.exports = app; // For testing
